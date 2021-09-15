@@ -14,12 +14,14 @@ import (
 	"golang.org/x/net/html"
 )
 
+// Creates a new dump struct with the default paramters.
 func NewDump() *Dump {
 	dump := Dump{}
 	Set(&dump.Parameters, "default")
 	return &dump
 }
 
+//
 func (dump *Dump) SetDownloadLinks() error {
 	dumpURL := dump.Parameters.BaseURL + dump.Parameters.DumpVer
 	resp, err := http.Get(dumpURL)

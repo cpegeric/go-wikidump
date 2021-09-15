@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	gowikidump "github.com/BehzadE/go-wikidump/pkg/go-wikidump"
@@ -9,12 +10,22 @@ import (
 func main() {
 	dump := gowikidump.NewDump()
 	dump.Parameters.DumpDirectory = "/home/solaire/Projects/Thesis/dump/"
-	err := dump.SetDownloadLinks()
+	// err := dump.SetDownloadLinks()
+	// dump.DownloadURLS(3)
+	// err := dump.SaveIndexRanges()
+	var pageID int64
+	pageID = 57027716
+	// pageID = 12
+	page, err := dump.GetPage(pageID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// fmt.Println(dump.Links)
-	dump.DownloadURLS(3)
+	plain, err := page.GetPlainText()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(plain))
+
 }
 
 // func main() {
