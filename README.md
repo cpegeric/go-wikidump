@@ -28,7 +28,7 @@ Before you can start extracting pages you need to run
     dump.SaveIndexRanges()
 Which reads the index files and saves the range of pageIDs included in each index in a text file
 to be able to access the required index file without having to search through all of them for 
-each page.
+each page. This function only needs to be called once to create offsets.txt file in the dump directory.
 
 
 Extract a specific page from the dump:
