@@ -23,6 +23,12 @@ where the number specifies the number of concurrent downloads. According to my t
 to use more than 3 concurrent download connections results in errors so choose from 1-3.
 
 The default download folder is "wikipedia-dump" inside the working directory.
+Before you can start extracting pages you need to run 
+    
+    dump.SaveIndexRanges()
+Which reads the index files and saves the range of pageIDs included in each index in a text file
+to be able to access the required index file without having to search through all of them for 
+each page.
 
 
 Extract a specific page from the dump:
