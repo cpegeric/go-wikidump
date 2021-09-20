@@ -40,7 +40,7 @@ func (page *Page) GetSectionTitles() []*Section {
 		rtrim := regexp.MustCompile("^[a-zA-Z0-9 ,]*")
 		title := rtrim.FindString(r.FindStringSubmatch(line)[1])
 		sections = append(sections, &Section{
-			Title: title,
+			Title: strings.TrimSpace(title),
 			Level: level,
 		})
 	}
