@@ -21,7 +21,7 @@ func NewDump() *Dump {
 	return &dump
 }
 
-//
+// Find and save the download urls for a given version of mediawiki dump.
 func (dump *Dump) SetDownloadLinks() error {
 	dumpURL := dump.Parameters.BaseURL + dump.Parameters.DumpVer
 	resp, err := http.Get(dumpURL)
@@ -37,6 +37,7 @@ func (dump *Dump) SetDownloadLinks() error {
 	return nil
 }
 
+// Get pages-articles-multistream bzip2 archive urls from the html body reader.
 func getHtmlLinks(body io.Reader) []string {
 	var links []string
 	z := html.NewTokenizer(body)
@@ -61,6 +62,7 @@ func getHtmlLinks(body io.Reader) []string {
 	}
 }
 
+// Downloads the urls set in the dump.Links field.
 func (dump *Dump) DownloadURLS(maxWorkers int) error {
 	if dump.Links == nil {
 		return errors.New("Links unset.")
@@ -80,7 +82,7 @@ func (dump *Dump) DownloadURLS(maxWorkers int) error {
 	close(linksC)
 	for w := 1; w <= maxWorkers; w++ {
 		wg.Add(1)
-		go DownloadWorker(w, linksC, results, dump.Parameters.DumpDirectory, &wg)
+		go downloadWorker(w, linksC, results, dump.Parameters.DumpDirectory, &wg)
 	}
 	wg.Wait()
 	for k, v := range results {
@@ -91,7 +93,7 @@ func (dump *Dump) DownloadURLS(maxWorkers int) error {
 	return nil
 }
 
-func DownloadURL(url string, dst string) error {
+func downloadURL(url string, dst string) error {
 	client := grab.NewClient()
 	req, err := grab.NewRequest(dst, url)
 	if err != nil {
@@ -126,9 +128,9 @@ Loop:
 	return nil
 }
 
-func DownloadWorker(id int, urls <-chan string, results map[string]error, dst string, wg *sync.WaitGroup) {
+func downloadWorker(id int, urls <-chan string, results map[string]error, dst string, wg *sync.WaitGroup) {
 	for url := range urls {
-		err := DownloadURL(url, dst)
+		err := downloadURL(url, dst)
 		results[url] = err
 	}
 	wg.Done()

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 )
 
 // Get the plain text from the original wikitext. Requires the pandoc package to be installed on the system.
@@ -20,4 +22,27 @@ func (page *Page) GetPlainText() ([]byte, error) {
 		return nil, err
 	}
 	return bout.Bytes(), nil
+}
+
+func (page *Page) getSectionTitleLines() []string {
+	r := regexp.MustCompile("(?m)^=+.*?=+$")
+	matches := r.FindAllString(page.Revision.Text, -1)
+	return matches
+}
+
+// Get Section titles from page.
+func (page *Page) GetSectionTitles() []*Section {
+	lines := page.getSectionTitleLines()
+	sections := make([]*Section, 0)
+	for _, line := range lines {
+		level := strings.Count(line, "=")
+		r := regexp.MustCompile("^=+(.*?)=+$")
+		rtrim := regexp.MustCompile("^[a-zA-Z0-9 ,]*")
+		title := rtrim.FindString(r.FindStringSubmatch(line)[1])
+		sections = append(sections, &Section{
+			Title: title,
+			Level: level,
+		})
+	}
+	return sections
 }
