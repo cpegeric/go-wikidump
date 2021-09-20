@@ -35,7 +35,7 @@ func (page *Page) GetSectionTitles() []*Section {
 	lines := page.getSectionTitleLines()
 	sections := make([]*Section, 0)
 	for _, line := range lines {
-		level := strings.Count(line, "=")
+		level := strings.Count(line, "=") / 2
 		r := regexp.MustCompile("^=+(.*?)=+$")
 		rtrim := regexp.MustCompile("^[a-zA-Z0-9 ,]*")
 		title := rtrim.FindString(r.FindStringSubmatch(line)[1])
