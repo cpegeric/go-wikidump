@@ -27,6 +27,11 @@ type Pages struct {
 	Pages   []Page   `xml:"page"`
 }
 
+type Section struct {
+	Title string
+	Level int
+}
+
 type Parameters struct {
 	BaseURL       string `default:"https://dumps.wikimedia.org"`
 	DumpVer       string `default:"/enwiki/20210720/"`
