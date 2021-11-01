@@ -19,7 +19,7 @@ func (dump *Dump) getIndexFiles() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = filepath.Walk(dump.Parameters.DumpDirectory, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(dump.Parameters.DumpDirectory, func(_ string, info os.FileInfo, err error) error {
 		if err == nil && pattern.MatchString(info.Name()) {
 			result = append(result, dump.Parameters.DumpDirectory+info.Name())
 		}

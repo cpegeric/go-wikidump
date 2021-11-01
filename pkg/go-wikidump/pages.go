@@ -30,7 +30,7 @@ func (page *Page) getSectionTitleLines() []string {
 	return matches
 }
 
-// Get Section titles from page.
+// Get page sections.
 func (page *Page) GetSectionTitles() []*Section {
 	lines := page.getSectionTitleLines()
 	sections := make([]*Section, 0)

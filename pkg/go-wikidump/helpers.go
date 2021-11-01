@@ -8,7 +8,7 @@ import (
 
 func Set(ptr interface{}, tag string) error {
 	if reflect.TypeOf(ptr).Kind() != reflect.Ptr {
-		return fmt.Errorf("Not a pointer")
+		return fmt.Errorf("not a pointer")
 	}
 	v := reflect.ValueOf(ptr).Elem()
 	t := v.Type()
@@ -24,9 +24,8 @@ func Set(ptr interface{}, tag string) error {
 }
 
 func setField(field reflect.Value, defaultVal string) error {
-
 	if !field.CanSet() {
-		return fmt.Errorf("Can't set value\n")
+		return fmt.Errorf("can't set value")
 	}
 	switch field.Kind() {
 	case reflect.Int:

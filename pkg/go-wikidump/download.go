@@ -65,10 +65,9 @@ func getHtmlLinks(body io.Reader) []string {
 // Downloads the urls set in the dump.Links field.
 func (dump *Dump) DownloadURLS(maxWorkers int) error {
 	if dump.Links == nil {
-		return errors.New("Links unset.")
+		return errors.New("links unset")
 	}
 	err := os.MkdirAll(dump.Parameters.DumpDirectory, os.ModePerm)
-
 	if err != nil {
 		return err
 	}
@@ -82,7 +81,7 @@ func (dump *Dump) DownloadURLS(maxWorkers int) error {
 	close(linksC)
 	for w := 1; w <= maxWorkers; w++ {
 		wg.Add(1)
-		go downloadWorker(w, linksC, results, dump.Parameters.DumpDirectory, &wg)
+		go downloadWorker(linksC, results, dump.Parameters.DumpDirectory, &wg)
 	}
 	wg.Wait()
 	for k, v := range results {
@@ -128,7 +127,7 @@ Loop:
 	return nil
 }
 
-func downloadWorker(id int, urls <-chan string, results map[string]error, dst string, wg *sync.WaitGroup) {
+func downloadWorker(urls <-chan string, results map[string]error, dst string, wg *sync.WaitGroup) {
 	for url := range urls {
 		err := downloadURL(url, dst)
 		results[url] = err

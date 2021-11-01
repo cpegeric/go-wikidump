@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"strconv"
 	"strings"
@@ -88,7 +89,8 @@ func getStream(indexFilename string, byteLocations []int64) ([]byte, error) {
 	defer file.Close()
 	var isEnd bool
 	if byteLocations[1] == 0 {
-		fi, err := file.Stat()
+		var fi fs.FileInfo
+		fi, err = file.Stat()
 		if err != nil {
 			return nil, err
 		}
