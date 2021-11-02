@@ -17,7 +17,7 @@ type indexLine struct {
 }
 
 // Get the index files from the dump directory.
-func (dump *Dump) getIndexFiles() ([]string, error) {
+func (dump *dump) getIndexFiles() ([]string, error) {
 	pattern, err := regexp.Compile(".*index.*")
 	result := make([]string, 0)
 	if err != nil {
@@ -101,7 +101,7 @@ func parseIndexFile(path string, fileID int64) error {
 
 // Read all the index files and store the page byte location and file names to a sqlite database
 // for faster querying.
-func (dump *Dump) ParseIndexes() error {
+func (dump *dump) ParseIndexes() error {
 	indexes, err := dump.getIndexFiles()
 	if err != nil {
 		return err

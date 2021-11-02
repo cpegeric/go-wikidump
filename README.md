@@ -1,3 +1,4 @@
+# The package is being rewritten. Unusable in the meantime.
 # go-wikidump
 This package was written in order to facilitate working with mediawiki dumps. You can use it to download 
 a mediawiki dump and extract wikipedia pages from bz2 compressed files without the need to

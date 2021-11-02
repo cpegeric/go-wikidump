@@ -8,7 +8,7 @@ import (
 )
 
 // Find and save the download urls for a given version of mediawiki dump.
-func (dump *Dump) Download(maxWorkers int) error {
+func (dump *dump) Download(maxWorkers int) error {
 	dumpURL := dump.BaseURL + dump.Ver
 	resp, err := http.Get(dumpURL)
 	if err != nil {
