@@ -5,6 +5,7 @@ import (
 	"compress/bzip2"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 
 	"github.com/BehzadE/go-wikidump/pkg/model"
@@ -42,4 +43,52 @@ func ExtractStream(streamInfo *model.Stream) ([]byte, error) {
 	return data, nil
 }
 
-func ExtractPages(stream []byte) []*Page
+func ExtractPages(stream []byte) {
+	file, err := os.Open("test.xml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Write(stream)
+}
+
+// Each stream contains 100 articles. This function parses the xml to get the specified page.
+// func getPageFromStream(stream []byte, pageID int64) (*Page, error) {
+// 	var pages Pages
+// 	buff := bytes.NewBufferString("<pages>\n")
+// 	buff.Write(stream)
+// 	buff.WriteString("</pages>")
+// 	err := xml.Unmarshal(buff.Bytes(), &pages)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	for _, page := range pages.Pages {
+// 		if page.ID == pageID {
+// 			return &page, nil
+// 		}
+// 	}
+// 	return nil, errors.New("not found")
+// }
+//
+// // Finds and returns the page associated with the specified pageID if it exists.
+// func (dump *Dump) GetPage(pageID int64) (*Page, error) {
+// 	indexFile, err := dump.findIndex(pageID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	byteLocations, err := getPageByteLocation(indexFile, pageID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	stream, err := getStream(indexFile, byteLocations)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	page, err := getPageFromStream(stream, pageID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return page, nil
+// }
