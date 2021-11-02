@@ -1,11 +1,6 @@
-package gowikidump
+package wikidump
 
 import "encoding/xml"
-
-type Index struct {
-	Filename string `json:"filename"`
-	EndID    string `json:"endid"`
-}
 
 type Page struct {
 	XMLName   xml.Name `xml:"page"`
@@ -36,9 +31,4 @@ type Parameters struct {
 	BaseURL       string `default:"https://dumps.wikimedia.org"`
 	DumpVer       string `default:"/enwiki/20210720/"`
 	DumpDirectory string `default:"./wikipedia-dump/"`
-}
-
-type Dump struct {
-	Parameters Parameters
-	Links      []string
 }

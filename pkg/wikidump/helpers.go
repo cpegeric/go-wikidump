@@ -1,4 +1,4 @@
-package gowikidump
+package wikidump
 
 import (
 	"fmt"
