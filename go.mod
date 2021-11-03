@@ -4,9 +4,7 @@ go 1.17
 
 require (
 	github.com/Masterminds/squirrel v1.5.1
-	github.com/cavaliercoder/grab v2.0.0+incompatible
 	github.com/mattn/go-sqlite3 v1.14.6
-	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf
 )
 
 require (
