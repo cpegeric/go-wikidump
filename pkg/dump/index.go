@@ -9,13 +9,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/mattn/go-sqlite3"
+	"github.com/BehzadE/go-wikidump/pkg/model"
 )
-
-type indexLine struct {
-	pageID, byteBegin int64
-}
 
 // Get the index files from the dump directory.
 func (dump *dump) getIndexFiles() ([]string, error) {
@@ -26,7 +23,7 @@ func (dump *dump) getIndexFiles() ([]string, error) {
 	}
 	err = filepath.Walk(dump.dir, func(_ string, info os.FileInfo, err error) error {
 		if err == nil && pattern.MatchString(info.Name()) {
-			result = append(result, dump.dir+"/"+info.Name())
+			result = append(result, info.Name())
 		}
 		return nil
 	})
@@ -36,37 +33,44 @@ func (dump *dump) getIndexFiles() ([]string, error) {
 	return result, nil
 }
 
-func parseIndexLine(line string) (indexLine, error) {
+func parseIndexLine(line string) (int64, int64, error) {
 	splits := strings.Split(line, ":")
 	byteBegin, err := strconv.ParseInt(splits[0], 10, 64)
 	if err != nil {
-		return indexLine{}, err
+		return 0, 0, err
 	}
 	pageID, err := strconv.ParseInt(splits[1], 10, 64)
 	if err != nil {
-		return indexLine{}, err
+		return 0, 0, err
 	}
-	return indexLine{pageID: pageID, byteBegin: byteBegin}, nil
+	return byteBegin, pageID, nil
 }
 
 // bool value shows whether the scanner has reached the end of the file or not.
-func scanStream(scanner *bufio.Scanner) ([]indexLine, bool, error) {
-	lines := make([]indexLine, 0)
-	var i int
+func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
+	pageIDs := make([]int64, 0)
+	scanner.Scan()
+	byteBegin, pageID, err := parseIndexLine(scanner.Text())
+	if err != nil {
+		return 0, nil, false, err
+	}
+	pageIDs = append(pageIDs, pageID)
+	i := 1
 	for i < 100 && scanner.Scan() {
 		i++
-		line, err := parseIndexLine(scanner.Text())
+		_, pageID, err = parseIndexLine(scanner.Text())
 		if err != nil {
-			return nil, false, err
+			return 0, nil, false, err
 		}
-		lines = append(lines, line)
+		pageIDs = append(pageIDs, pageID)
 	}
-	return lines, i < 99, nil
+	return byteBegin, pageIDs, i < 99, nil
 }
 
-func (d *dump) parseIndexFile(path string, fileID int64) error {
-	fmt.Printf("Parsing index file: %v with fileID: %v", path, fileID)
-	file, err := os.Open(path)
+func (d *dump) indexDatafile(datafile *model.Datafile) error {
+	fmt.Printf("Parsing index file: %v with fileID: %v\n", datafile.IndexPath, datafile.ID)
+	t := time.Now()
+	file, err := os.Open(filepath.Join(d.dir, datafile.IndexPath))
 	if err != nil {
 		return err
 	}
@@ -74,55 +78,67 @@ func (d *dump) parseIndexFile(path string, fileID int64) error {
 
 	br := bzip2.NewReader(file)
 	scanner := bufio.NewScanner(br)
-	var prevStreamID, streamID int64
-	var done bool
-	var streamLines []indexLine
-	for {
-		streamLines, done, err = scanStream(scanner)
+	done := false
+	var pageIDs, prevPageIDs []int64
+	var byteBegin, prevByteBegin int64
+	for !done {
+		byteBegin, pageIDs, done, err = readStream(scanner)
 		if err != nil {
 			return err
 		}
-		streamID, err = d.createStream(streamLines[0].byteBegin, fileID)
-		if prevStreamID != 0 {
-			err = d.setStreamByteEnd(prevStreamID, streamLines[0].byteBegin)
+		if prevPageIDs != nil {
+			err = d.insertStream(datafile.ID, prevByteBegin, byteBegin, prevPageIDs)
 			if err != nil {
 				return err
 			}
 		}
-		prevStreamID = streamID
-		if err != nil {
-			return err
-		}
-		for _, line := range streamLines {
-			d.createPage(line.pageID, streamID)
-		}
-		if done {
-			break
-		}
+		prevByteBegin, prevPageIDs = byteBegin, pageIDs
 	}
-	d.setStreamByteEnd(prevStreamID, 0)
-	return nil
+	if err = d.insertStream(datafile.ID, prevByteBegin, datafile.Size, prevPageIDs); err != nil {
+		return err
+	}
+	d.MarkDatafileIndexed(datafile.ID)
+	fmt.Println(time.Since(t))
+	return err
 }
 
-// Read all the index files and store the page byte location and file names to a sqlite database
-// for faster querying.
-func (d *dump) ParseIndexes() error {
-	indexes, err := d.getIndexFiles()
+func (d *dump) initDatafiles() error {
+	indexPaths, err := d.getIndexFiles()
 	if err != nil {
 		return err
 	}
-	for _, index := range indexes {
-		datafile := strings.Replace(index, "txt", "xml", 1)
-		datafile = strings.Replace(datafile, "-index", "", 1)
-		fileID, err := d.createFile(datafile)
+	paths := make([]string, len(indexPaths))
+	sizes := make([]int64, len(indexPaths))
+	for i := range indexPaths {
+		path := strings.Replace(indexPaths[i], "txt", "xml", 1)
+		path = strings.Replace(path, "-index", "", 1)
+		var f *os.File
+		var fi os.FileInfo
+		f, err = os.Open(filepath.Join(d.dir, path))
 		if err != nil {
-			sqErr := err.(sqlite3.Error)
-			if sqErr.ExtendedCode != sqlite3.ErrConstraintUnique {
-				return err
-			}
+			return err
 		}
-		err = d.parseIndexFile(index, fileID)
+		fi, err = f.Stat()
 		if err != nil {
+			return err
+		}
+		paths[i] = path
+		sizes[i] = fi.Size()
+	}
+	err = d.insertDatafiles(paths, sizes, indexPaths)
+	return err
+}
+
+func (d *dump) SaveIndexes() error {
+	if err := d.initDatafiles(); err != nil {
+		return err
+	}
+	datafiles, err := d.selectDatafiles()
+	if err != nil {
+		return err
+	}
+	for _, datafile := range datafiles {
+		if err = d.indexDatafile(datafile); err != nil {
 			return err
 		}
 	}

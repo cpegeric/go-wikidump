@@ -2,45 +2,60 @@ package model
 
 import (
 	"database/sql"
-
-	sq "github.com/Masterminds/squirrel"
+	"fmt"
 )
 
-// Create a row in files table and return the ID.
-func CreateFile(db *sql.DB, path string) (int64, error) {
-	query := sq.Insert("datafiles").Columns("path").Values(path)
-	result, err := query.RunWith(db).Exec()
-	if err != nil {
-		return 0, err
+func InsertDatafiles(db *sql.DB, datafiles []string, sizes []int64, indexfiles []string) error {
+	query := "insert or ignore into datafiles (path,size,indexpath) values "
+	for i := range datafiles {
+		query += fmt.Sprintf("('%v',%v,'%v'),", datafiles[i], sizes[i], indexfiles[i])
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, err
-}
-
-func CreateStream(db *sql.DB, byteBegin, fileID int64) (int64, error) {
-	query := sq.Insert("streams").Columns("bytebegin", "fileid").Values(byteBegin, fileID)
-	result, err := query.RunWith(db).Exec()
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, err
-}
-
-func SetStreamByteEnd(db *sql.DB, id, byteEnd int64) error {
-	query := sq.Update("streams").Set("byteEnd", byteEnd).Where(sq.Eq{"id": id})
-	_, err := query.RunWith(db).Exec()
+	query = query[:len(query)-1] + ";"
+	_, err := db.Exec(query)
 	return err
 }
 
-func CreatePage(db *sql.DB, id, streamID int64) error {
-	query := sq.Insert("pages").Columns("id", "streamid").Values(id, streamID)
-	_, err := query.RunWith(db).Exec()
+func MarkDatafileIndexed(db *sql.DB, id int64) error {
+	query := "update datafiles set indexed = true where id = ?"
+	_, err := db.Exec(query, id)
 	return err
+}
+
+func InsertStream(db *sql.DB, fileID, byteBegin, byteEnd int64, pageIDs []int64) error {
+	_, err := selectStream(db, byteBegin, fileID)
+	if err == nil {
+		return nil
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	query := "insert or ignore into streams (fileid,bytebegin,byteend) values(?,?,?)"
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	result, err := stmt.Exec(fileID, byteBegin, byteEnd)
+	if err != nil {
+		return err
+	}
+	streamID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	query = "insert or ignore into pages (id,streamid) values "
+	for _, pageID := range pageIDs {
+		query += fmt.Sprintf("(%v,%v),", pageID, streamID)
+	}
+	query = query[:len(query)-1] + ";"
+	stmt, err = tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
 }
