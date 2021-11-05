@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/BehzadE/go-wikidump/pkg/model"
+	"github.com/BehzadE/go-wikidump/internal/model"
 )
 
 // Get the stream containing the page from bz2 file.

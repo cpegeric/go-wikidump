@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/BehzadE/go-wikidump/pkg/model"
+	"github.com/BehzadE/go-wikidump/internal/model"
 )
 
 // Read a single index file and save lines to the database.
