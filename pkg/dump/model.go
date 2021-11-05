@@ -22,26 +22,26 @@ func New(dir string) (*dump, error) {
 	return &d, nil
 }
 
-func (d *dump) insertStream(fileID, byteBegin, byteEnd int64, pageIDs []int64) error {
-	return model.InsertStream(d.db, fileID, byteBegin, byteEnd, pageIDs)
+func (d *dump) insertStream(archiveID, byteBegin, byteEnd int64, pageIDs []int64) error {
+	return model.InsertStream(d.db, archiveID, byteBegin, byteEnd, pageIDs)
 }
 
-func (d *dump) getStreamID(pageID int64) (int64, error) {
-	return model.SelectPageStreamID(d.db, pageID)
+func (d *dump) selectPage(pageID int64) (int64, error) {
+	return model.SelectPage(d.db, pageID)
 }
 
-func (d *dump) getStream(streamID int64) (*model.Stream, error) {
-	return model.SelectStreamByID(d.db, streamID)
+func (d *dump) selectStream(streamID int64) (*model.Stream, error) {
+	return model.SelectStream(d.db, streamID)
 }
 
-func (d *dump) insertDatafiles(datafiles []string, sizes []int64, indexfiles []string) error {
-	return model.InsertDatafiles(d.db, datafiles, sizes, indexfiles)
+func (d *dump) insertArchives(archives []*model.Archive) error {
+	return model.InsertArchives(d.db, archives)
 }
 
-func (d *dump) selectDatafiles() ([]*model.Datafile, error) {
-	return model.SelectDatafiles(d.db)
+func (d *dump) selectArchives() ([]*model.Archive, error) {
+	return model.SelectArchives(d.db)
 }
 
-func (d *dump) MarkDatafileIndexed(id int64) error {
-	return model.MarkDatafileIndexed(d.db, id)
+func (d *dump) markArchiveProcessed(id int64) error {
+	return model.MarkArchiveProcessed(d.db, id)
 }

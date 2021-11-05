@@ -67,10 +67,10 @@ func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
 	return byteBegin, pageIDs, i < 99, nil
 }
 
-func (d *dump) indexDatafile(datafile *model.Datafile) error {
-	fmt.Printf("Parsing index file: %v with fileID: %v\n", datafile.IndexPath, datafile.ID)
+func (d *dump) processArchiveIndex(archive *model.Archive) error {
+	fmt.Printf("Index file: %v with : %v\n", archive.IndexPath, archive.ID)
 	t := time.Now()
-	file, err := os.Open(filepath.Join(d.dir, datafile.IndexPath))
+	file, err := os.Open(filepath.Join(d.dir, archive.IndexPath))
 	if err != nil {
 		return err
 	}
@@ -87,28 +87,27 @@ func (d *dump) indexDatafile(datafile *model.Datafile) error {
 			return err
 		}
 		if prevPageIDs != nil {
-			err = d.insertStream(datafile.ID, prevByteBegin, byteBegin, prevPageIDs)
+			err = d.insertStream(archive.ID, prevByteBegin, byteBegin, prevPageIDs)
 			if err != nil {
 				return err
 			}
 		}
 		prevByteBegin, prevPageIDs = byteBegin, pageIDs
 	}
-	if err = d.insertStream(datafile.ID, prevByteBegin, datafile.Size, prevPageIDs); err != nil {
+	if err = d.insertStream(archive.ID, prevByteBegin, archive.FileSize, prevPageIDs); err != nil {
 		return err
 	}
-	d.MarkDatafileIndexed(datafile.ID)
+	d.markArchiveProcessed(archive.ID)
 	fmt.Println(time.Since(t))
 	return err
 }
 
-func (d *dump) initDatafiles() error {
+func (d *dump) saveArchives() error {
 	indexPaths, err := d.getIndexFiles()
 	if err != nil {
 		return err
 	}
-	paths := make([]string, len(indexPaths))
-	sizes := make([]int64, len(indexPaths))
+	var archives []*model.Archive
 	for i := range indexPaths {
 		path := strings.Replace(indexPaths[i], "txt", "xml", 1)
 		path = strings.Replace(path, "-index", "", 1)
@@ -122,23 +121,23 @@ func (d *dump) initDatafiles() error {
 		if err != nil {
 			return err
 		}
-		paths[i] = path
-		sizes[i] = fi.Size()
+		archive := model.Archive{FilePath: path, FileSize: fi.Size(), IndexPath: indexPaths[i]}
+		archives = append(archives, &archive)
 	}
-	err = d.insertDatafiles(paths, sizes, indexPaths)
+	err = d.insertArchives(archives)
 	return err
 }
 
 func (d *dump) SaveIndexes() error {
-	if err := d.initDatafiles(); err != nil {
+	if err := d.saveArchives(); err != nil {
 		return err
 	}
-	datafiles, err := d.selectDatafiles()
+	archives, err := d.selectArchives()
 	if err != nil {
 		return err
 	}
-	for _, datafile := range datafiles {
-		if err = d.indexDatafile(datafile); err != nil {
+	for _, archive := range archives {
+		if err = d.processArchiveIndex(archive); err != nil {
 			return err
 		}
 	}
