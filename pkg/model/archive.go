@@ -36,6 +36,7 @@ func SelectArchives(db *sql.DB) ([]*Archive, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	var results []*Archive
 	for rows.Next() {
 		var df Archive

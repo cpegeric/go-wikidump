@@ -3,13 +3,14 @@ package dump
 import (
 	"bufio"
 	"compress/bzip2"
-	"fmt"
+	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/BehzadE/go-wikidump/pkg/model"
 )
@@ -46,10 +47,18 @@ func parseIndexLine(line string) (int64, int64, error) {
 	return byteBegin, pageID, nil
 }
 
+type scannerExhaustedError struct{}
+
+func (err scannerExhaustedError) Error() string {
+	return "no more lines in scanner"
+}
+
 // bool value shows whether the scanner has reached the end of the file or not.
 func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
 	pageIDs := make([]int64, 0)
-	scanner.Scan()
+	if !scanner.Scan() {
+		return 0, nil, true, scannerExhaustedError{}
+	}
 	byteBegin, pageID, err := parseIndexLine(scanner.Text())
 	if err != nil {
 		return 0, nil, false, err
@@ -68,8 +77,6 @@ func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
 }
 
 func (d *dump) processArchiveIndex(archive *model.Archive) error {
-	fmt.Printf("Index file: %v with : %v\n", archive.IndexPath, archive.ID)
-	t := time.Now()
 	file, err := os.Open(filepath.Join(d.dir, archive.IndexPath))
 	if err != nil {
 		return err
@@ -84,6 +91,9 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	for !done {
 		byteBegin, pageIDs, done, err = readStream(scanner)
 		if err != nil {
+			if errors.Is(err, scannerExhaustedError{}) {
+				break
+			}
 			return err
 		}
 		if prevPageIDs != nil {
@@ -97,8 +107,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	if err = d.insertStream(archive.ID, prevByteBegin, archive.FileSize, prevPageIDs); err != nil {
 		return err
 	}
-	d.markArchiveProcessed(archive.ID)
-	fmt.Println(time.Since(t))
+	err = d.markArchiveProcessed(archive.ID)
 	return err
 }
 
@@ -128,7 +137,7 @@ func (d *dump) saveArchives() error {
 	return err
 }
 
-func (d *dump) SaveIndexes() error {
+func (d *dump) PopulateDB() error {
 	if err := d.saveArchives(); err != nil {
 		return err
 	}
@@ -136,10 +145,16 @@ func (d *dump) SaveIndexes() error {
 	if err != nil {
 		return err
 	}
+	var wg sync.WaitGroup
 	for _, archive := range archives {
-		if err = d.processArchiveIndex(archive); err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, archive *model.Archive) {
+			defer wg.Done()
+			if err = d.processArchiveIndex(archive); err != nil {
+				log.Printf("error processing archive index with ID %v: %v", archive.ID, err)
+			}
+		}(&wg, archive)
 	}
+	wg.Wait()
 	return nil
 }

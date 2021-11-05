@@ -8,10 +8,11 @@ import (
 )
 
 func InitDB(dst string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dst+"/db.sqlite3?_foreign_keys=on")
+	db, err := sql.Open("sqlite3", dst+"/db.sqlite3?_foreign_keys=on&cache=shared")
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(1)
 	query, err := os.ReadFile("createDB.sql")
 	if err != nil {
 		return nil, err
