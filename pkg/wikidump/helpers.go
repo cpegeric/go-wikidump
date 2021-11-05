@@ -1,4 +1,4 @@
-package dump
+package wikidump
 
 import (
 	"bufio"

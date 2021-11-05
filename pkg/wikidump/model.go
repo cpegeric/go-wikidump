@@ -1,4 +1,4 @@
-package dump
+package wikidump
 
 import (
 	"database/sql"
@@ -44,4 +44,8 @@ func (d *dump) selectArchives() ([]*model.Archive, error) {
 
 func (d *dump) markArchiveProcessed(id int64) error {
 	return model.MarkArchiveProcessed(d.db, id)
+}
+
+func (d *dump) selectArchiveStreams(archivePath string) ([]*model.Stream, error) {
+	return model.SelectArchiveStreams(d.db, archivePath)
 }

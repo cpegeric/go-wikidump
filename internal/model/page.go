@@ -2,6 +2,11 @@ package model
 
 import "database/sql"
 
+// TODO: return stream as a bufio.Scanner
+// TODO: return archive as something like a scanner than can read streams.
+// TODO: return page by ID.
+// TODO: return group of pages by ID list.
+// TODO: extract all templates.
 func SelectPage(db *sql.DB, pageID int64) (int64, error) {
 	query := `
         select StreamID 

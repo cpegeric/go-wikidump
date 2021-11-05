@@ -87,3 +87,28 @@ func streamExists(db *sql.DB, byteBegin, archiveID int64) (int64, error) {
 	err := db.QueryRow(query, byteBegin, archiveID).Scan(&streamID)
 	return streamID, err
 }
+
+func SelectArchiveStreams(db *sql.DB, archivePath string) ([]*Stream, error) {
+	query := `
+        select s.ByteBegin,s.ByteEnd
+        from Stream s
+        inner join Archive a
+        on s.ArchiveID = a.ID
+        where a.FilePath = ?
+        order by s.ByteBegin asc;
+    `
+	rows, err := db.Query(query, archivePath)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var results []*Stream
+	for rows.Next() {
+		var sr Stream
+		if err := rows.Scan(&sr.ByteBegin, &sr.ByteEnd); err != nil {
+			return nil, err
+		}
+		results = append(results, &sr)
+	}
+	return results, nil
+}
