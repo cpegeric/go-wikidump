@@ -7,75 +7,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/BehzadE/go-wikidump/pkg/model"
 )
 
-// Get the index files from the dump directory.
-func (dump *dump) getIndexFiles() ([]string, error) {
-	pattern, err := regexp.Compile(".*index.*")
-	result := make([]string, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = filepath.Walk(dump.dir, func(_ string, info os.FileInfo, err error) error {
-		if err == nil && pattern.MatchString(info.Name()) {
-			result = append(result, info.Name())
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func parseIndexLine(line string) (int64, int64, error) {
-	splits := strings.Split(line, ":")
-	byteBegin, err := strconv.ParseInt(splits[0], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	pageID, err := strconv.ParseInt(splits[1], 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-	return byteBegin, pageID, nil
-}
-
-type scannerExhaustedError struct{}
-
-func (err scannerExhaustedError) Error() string {
-	return "no more lines in scanner"
-}
-
-// bool value shows whether the scanner has reached the end of the file or not.
-func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
-	pageIDs := make([]int64, 0)
-	if !scanner.Scan() {
-		return 0, nil, true, scannerExhaustedError{}
-	}
-	byteBegin, pageID, err := parseIndexLine(scanner.Text())
-	if err != nil {
-		return 0, nil, false, err
-	}
-	pageIDs = append(pageIDs, pageID)
-	i := 1
-	for i < 100 && scanner.Scan() {
-		i++
-		_, pageID, err = parseIndexLine(scanner.Text())
-		if err != nil {
-			return 0, nil, false, err
-		}
-		pageIDs = append(pageIDs, pageID)
-	}
-	return byteBegin, pageIDs, i < 99, nil
-}
-
+// Read a single index file and save lines to the database.
 func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	file, err := os.Open(filepath.Join(d.dir, archive.IndexPath))
 	if err != nil {
@@ -111,7 +49,8 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	return err
 }
 
-func (d *dump) saveArchives() error {
+// Get archives from database and process those that have not already been processed.
+func (d *dump) processArchives() error {
 	indexPaths, err := d.getIndexFiles()
 	if err != nil {
 		return err
@@ -137,8 +76,9 @@ func (d *dump) saveArchives() error {
 	return err
 }
 
+// Populates the database with the index information available in dump directory.
 func (d *dump) PopulateDB() error {
-	if err := d.saveArchives(); err != nil {
+	if err := d.processArchives(); err != nil {
 		return err
 	}
 	archives, err := d.selectArchives()
