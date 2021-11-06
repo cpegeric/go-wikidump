@@ -17,7 +17,7 @@ In short, multstream dumps are made up of streams, each one of which holds only 
     go get https://github.com/BehzadE/go-wikidump
 
 ## Usage
-Download one or all parts of the multistream wikipedia dump into a directory. Each file must contain the corresponding index file.
+Download one or all parts of the multistream wikipedia dump into a directory. Each file must come with the corresponding index file.
 
     import (
         "fmt"
