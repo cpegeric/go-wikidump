@@ -1,6 +1,6 @@
 # go-wikidump
 ## Introduction
-Wikipedia dumps are a great source of textual data for language processing and machine learning purposes. The aim of this module is to make extracting pages from such dumps easier. This module works with the multistream xml dumps. Refer to [Wikipedia]{ https://en.wikipedia.org/wiki/Wikipedia:Database_download#Should_I_get_multistream? } for more information on the multistream dumps.
+Wikipedia dumps are a great source of textual data for language processing and machine learning purposes. The aim of this module is to make extracting pages from such dumps easier. This module works with the multistream xml dumps. Refer to [Wikipedia](https://en.wikipedia.org/wiki/Wikipedia:Database_download#Should_I_get_multistream?) for more information on the multistream dumps.
 
 In short, multstream dumps are made up of streams, each one of which holds only 100 wikipedia pages. Each multistream dump file comes with an index file of the same name. Index files contain the byte locations of the stream for pages. 
 ## Features
