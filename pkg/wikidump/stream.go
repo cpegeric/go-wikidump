@@ -62,3 +62,27 @@ func (d *dump) NewStreamReader(archivePath string) (*streamReader, error) {
 		path:    filepath.Join(d.dir, archivePath),
 	}, nil
 }
+
+func (d *dump) GetPages(pageIDs []int64) ([]*Page, error) {
+	streams, err := d.getPageStreams(pageIDs)
+	if err != nil {
+		return nil, err
+	}
+	var results []*Page
+	for s := range streams {
+		streamBytes, err := extractStream(filepath.Join(d.dir, s.Path), s.ByteBegin, s.ByteEnd)
+		if err != nil {
+			return nil, err
+		}
+		pages, err := ParseStream(streamBytes)
+		if err != nil {
+			return nil, err
+		}
+		pageMap := make(map[int64]struct{})
+		for _, id := range streams[s] {
+			pageMap[id] = struct{}{}
+		}
+		results = append(results, Find(pages, pageMap)...)
+	}
+	return results, nil
+}

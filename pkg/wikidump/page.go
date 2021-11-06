@@ -1,4 +1,4 @@
-package wikipage
+package wikidump
 
 import (
 	"bytes"
@@ -52,25 +52,13 @@ func ParseStream(stream []byte) ([]*Page, error) {
 	return s.Pages, nil
 }
 
-// // Finds and returns the page associated with the specified pageID if it exists.
-// func (dump *Dump) GetPage(pageID int64) (*Page, error) {
-// 	indexFile, err := dump.findIndex(pageID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	byteLocations, err := getPageByteLocation(indexFile, pageID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	stream, err := getStream(indexFile, byteLocations)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	page, err := getPageFromStream(stream, pageID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return page, nil
-// }
+// Only returns the pages with IDs that are in the pageIDs map.
+func Find(pages []*Page, pageIDs map[int64]struct{}) []*Page {
+	results := make([]*Page, 0)
+	for _, page := range pages {
+		if _, ok := pageIDs[page.ID]; ok {
+			results = append(results, page)
+		}
+	}
+	return results
+}

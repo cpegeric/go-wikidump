@@ -49,3 +49,29 @@ func (d *dump) markArchiveProcessed(id int64) error {
 func (d *dump) selectArchiveStreams(archivePath string) ([]*model.Stream, error) {
 	return model.SelectArchiveStreams(d.db, archivePath)
 }
+
+func (d *dump) getPageStreams(pageIDs []int64) (map[*model.Stream][]int64, error) {
+	streamIDs, err := model.SelectPages(d.db, pageIDs)
+	if err != nil {
+		return nil, err
+	}
+	streamPage := make(map[int64][]int64)
+	for i, streamID := range streamIDs {
+		if streamID != 0 {
+			streamPage[streamID] = append(streamPage[streamID], pageIDs[i])
+		}
+	}
+	unique := []int64{}
+	for k := range streamPage {
+		unique = append(unique, k)
+	}
+	streams, err := model.SelectStreams(d.db, unique)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[*model.Stream][]int64)
+	for _, stream := range streams {
+		result[stream] = streamPage[stream.ID]
+	}
+	return result, nil
+}
