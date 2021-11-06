@@ -7,11 +7,31 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/BehzadE/go-wikidump/internal/model"
 )
+
+// Get the index files from the dump directory.
+func (d *dump) walkDumpDir() ([]string, error) {
+	pattern, err := regexp.Compile(".*index.*")
+	result := make([]string, 0)
+	if err != nil {
+		return nil, err
+	}
+	err = filepath.Walk(d.dir, func(_ string, info os.FileInfo, err error) error {
+		if err == nil && pattern.MatchString(info.Name()) {
+			result = append(result, info.Name())
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 // Read a single index file and save lines to the database.
 func (d *dump) processArchiveIndex(archive *model.Archive) error {
@@ -51,7 +71,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 
 // Get archives from database and process those that have not already been processed.
 func (d *dump) processArchives() error {
-	indexPaths, err := d.getIndexFiles()
+	indexPaths, err := d.walkDumpDir()
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO: convert wikitext to plain text by expanding wikipedia templates.
 type Stream struct {
 	XMLName xml.Name `xml:"stream"`
 	Pages   []*Page  `xml:"page"`
