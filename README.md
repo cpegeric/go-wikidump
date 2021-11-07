@@ -64,7 +64,6 @@ You can also get a streamReader for a given dump file to read streams one by one
 		}
 		for _, page := range pages {
 			fmt.Println(page.Title)
-			fmt.Println(page.Redirect.Title)
 		}
 	
 	}
