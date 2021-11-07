@@ -8,6 +8,7 @@ create table if not exists Archive (
 
 create table if not exists Page (
     ID integer primary key,
+    Name text,
     StreamID integer not null,
     foreign key(StreamID) references Stream(id)
 );

@@ -15,7 +15,7 @@ type Stream struct {
 	ByteEnd   int64
 }
 
-func InsertStream(db *sql.DB, archiveID, byteBegin, byteEnd int64, pageIDs []int64) error {
+func InsertStream(db *sql.DB, archiveID, byteBegin, byteEnd int64, pageIDs []int64, pageNames []string) error {
 	_, err := streamExists(db, byteBegin, archiveID)
 	if err == nil {
 		return nil
@@ -43,11 +43,11 @@ func InsertStream(db *sql.DB, archiveID, byteBegin, byteEnd int64, pageIDs []int
 	}
 	query = `
         insert or ignore
-        into Page (ID,StreamID) 
+        into Page (ID,Name,StreamID) 
         values 
     `
-	for _, pageID := range pageIDs {
-		query += fmt.Sprintf("(%v,%v),", pageID, streamID)
+	for i := range pageIDs {
+		query += fmt.Sprintf(`(%v,"%v",%v),`, pageIDs[i], pageNames[i], streamID)
 	}
 	query = query[:len(query)-1] + ";"
 	stmt, err = tx.Prepare(query)
