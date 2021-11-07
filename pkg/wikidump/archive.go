@@ -16,12 +16,9 @@ import (
 
 // Get the index files from the dump directory.
 func (d *dump) walkDumpDir() ([]string, error) {
-	pattern, err := regexp.Compile(".*index.*")
+	pattern := regexp.MustCompile(".*index.*")
 	result := make([]string, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = filepath.Walk(d.dir, func(_ string, info os.FileInfo, err error) error {
+	err := filepath.Walk(d.dir, func(_ string, info os.FileInfo, err error) error {
 		if err == nil && pattern.MatchString(info.Name()) {
 			result = append(result, info.Name())
 		}
