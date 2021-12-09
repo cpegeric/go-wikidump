@@ -26,8 +26,8 @@ func (d *dump) insertStream(archiveID, byteBegin, byteEnd int64, pageIDs []int64
 	return model.InsertStream(d.db, archiveID, byteBegin, byteEnd, pageIDs, pageNames)
 }
 
-func (d *dump) selectPage(pageID int64) (int64, error) {
-	return model.SelectPage(d.db, pageID)
+func (d *dump) selectPages(pageIDs []int64) ([]int64, error) {
+	return model.SelectPages(d.db, pageIDs)
 }
 
 func (d *dump) selectStream(streamID int64) (*model.Stream, error) {

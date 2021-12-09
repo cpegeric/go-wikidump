@@ -86,3 +86,11 @@ func (d *dump) GetPages(pageIDs []int64) ([]*Page, error) {
 	}
 	return results, nil
 }
+
+func (d *dump) SearchPage(term string) ([]*Page, error) {
+	pageIDs, err := model.SearchPageName(d.db, term)
+	if err != nil {
+		return nil, err
+	}
+	return d.GetPages(pageIDs)
+}

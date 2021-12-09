@@ -1,6 +1,7 @@
 package wikitext
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -65,14 +66,8 @@ func ToPlain(text string) string {
 
 // TODO: handle nested links
 func linkDisplay(link string) string {
-	firstIndex := 1
-	if link[1] == '[' {
-		firstIndex = 2
-	}
-	if strings.Contains(link, "|") {
-		return link[strings.LastIndex(link, "|")+1 : len(link)-firstIndex]
-	}
-	return link[firstIndex : len(link)-firstIndex]
+	re := regexp.MustCompile(`[\[\]]`)
+	return re.ReplaceAllLiteralString(link, "")
 }
 
 // TODO: trim empty lines and lines with only * in them.
