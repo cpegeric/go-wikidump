@@ -6,18 +6,34 @@ import (
 	"strings"
 )
 
+type indexline struct {
+	pageName  string
+	byteBegin int64
+	pageID    int64
+}
+
+type stream struct {
+	pageIDs   []int64
+	pageNames []string
+	byteBegin int64
+	last      bool
+}
+
 // Parse a single line in a index file.
-func splitIndexline(line string) (int64, int64, error) {
-	splits := strings.Split(line, ":")
-	byteBegin, err := strconv.ParseInt(splits[0], 10, 64)
+func splitIndexline(line string) (*indexline, error) {
+	splits := strings.SplitN(line, ":", 3)
+	var result indexline
+	var err error
+	result.byteBegin, err = strconv.ParseInt(splits[0], 10, 64)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	pageID, err := strconv.ParseInt(splits[1], 10, 64)
+	result.pageID, err = strconv.ParseInt(splits[1], 10, 64)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	return byteBegin, pageID, nil
+	result.pageName = splits[2]
+	return &result, nil
 }
 
 type scannerExhaustedError struct{}
@@ -28,24 +44,28 @@ func (err scannerExhaustedError) Error() string {
 
 // Read a hundred lines from the index file or until the end of file.
 // bool value shows whether the scanner has reached the end of the file or not.
-func readStream(scanner *bufio.Scanner) (int64, []int64, bool, error) {
-	pageIDs := make([]int64, 0)
+func readStream(scanner *bufio.Scanner) (*stream, error) {
+	var s stream
 	if !scanner.Scan() {
-		return 0, nil, true, scannerExhaustedError{}
+		return nil, scannerExhaustedError{}
 	}
-	byteBegin, pageID, err := splitIndexline(scanner.Text())
+	il, err := splitIndexline(scanner.Text())
 	if err != nil {
-		return 0, nil, false, err
+		return nil, err
 	}
-	pageIDs = append(pageIDs, pageID)
+	s.byteBegin = il.byteBegin
+	s.pageNames = append(s.pageNames, il.pageName)
+	s.pageIDs = append(s.pageIDs, il.pageID)
 	i := 1
 	for i < 100 && scanner.Scan() {
 		i++
-		_, pageID, err = splitIndexline(scanner.Text())
+		il, err = splitIndexline(scanner.Text())
 		if err != nil {
-			return 0, nil, false, err
+			return nil, err
 		}
-		pageIDs = append(pageIDs, pageID)
+		s.pageNames = append(s.pageNames, il.pageName)
+		s.pageIDs = append(s.pageIDs, il.pageID)
 	}
-	return byteBegin, pageIDs, i < 99, nil
+	s.last = i < 99
+	return &s, nil
 }

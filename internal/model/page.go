@@ -26,7 +26,7 @@ func SelectPages(db *sql.DB, pageIDs []int64) ([]int64, error) {
 	query := `
         select StreamID
         from Page
-        Where ID in (?` + strings.Repeat(",?", len(pageIDs)-1) + ")"
+        where ID in (?` + strings.Repeat(",?", len(pageIDs)-1) + ")"
 	args := make([]interface{}, len(pageIDs))
 	for i, id := range pageIDs {
 		args[i] = id
@@ -43,6 +43,28 @@ func SelectPages(db *sql.DB, pageIDs []int64) ([]int64, error) {
 			return nil, err
 		}
 		i++
+	}
+	return results, nil
+}
+
+func SearchPageName(db *sql.DB, name string) ([]int64, error) {
+	query := `
+        select ID
+        from Page
+        where Name like ?
+    `
+	rows, err := db.Query(query, name)
+	results := make([]int64, 0)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var result int64
+		err := rows.Scan(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
 	}
 	return results, nil
 }

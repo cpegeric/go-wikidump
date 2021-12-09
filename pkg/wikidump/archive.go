@@ -16,12 +16,9 @@ import (
 
 // Get the index files from the dump directory.
 func (d *dump) walkDumpDir() ([]string, error) {
-	pattern, err := regexp.Compile(".*index.*")
+	pattern := regexp.MustCompile(".*index.*")
 	result := make([]string, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = filepath.Walk(d.dir, func(_ string, info os.FileInfo, err error) error {
+	err := filepath.Walk(d.dir, func(_ string, info os.FileInfo, err error) error {
 		if err == nil && pattern.MatchString(info.Name()) {
 			result = append(result, info.Name())
 		}
@@ -43,26 +40,28 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 
 	br := bzip2.NewReader(file)
 	scanner := bufio.NewScanner(br)
-	done := false
-	var pageIDs, prevPageIDs []int64
-	var byteBegin, prevByteBegin int64
-	for !done {
-		byteBegin, pageIDs, done, err = readStream(scanner)
+	var s *stream
+	var prevS *stream = nil
+	for {
+		s, err = readStream(scanner)
 		if err != nil {
 			if errors.Is(err, scannerExhaustedError{}) {
 				break
 			}
 			return err
 		}
-		if prevPageIDs != nil {
-			err = d.insertStream(archive.ID, prevByteBegin, byteBegin, prevPageIDs)
+		if prevS != nil {
+			err = d.insertStream(archive.ID, prevS.byteBegin, s.byteBegin, prevS.pageIDs, prevS.pageNames)
 			if err != nil {
 				return err
 			}
 		}
-		prevByteBegin, prevPageIDs = byteBegin, pageIDs
+		prevS = s
+		if s.last {
+			break
+		}
 	}
-	if err = d.insertStream(archive.ID, prevByteBegin, archive.FileSize, prevPageIDs); err != nil {
+	if err = d.insertStream(archive.ID, prevS.byteBegin, archive.FileSize, prevS.pageIDs, prevS.pageNames); err != nil {
 		return err
 	}
 	err = d.markArchiveProcessed(archive.ID)
