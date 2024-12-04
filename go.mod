@@ -1,4 +1,4 @@
-module github.com/BehzadE/go-wikidump
+module github.com/cpegeric/go-wikidump
 
 go 1.17
 

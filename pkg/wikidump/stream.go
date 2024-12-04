@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/BehzadE/go-wikidump/internal/model"
+	"github.com/cpegeric/go-wikidump/internal/model"
 )
 
 // Get the stream containing the page from bz2 file.

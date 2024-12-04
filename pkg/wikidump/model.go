@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"path"
 
-	"github.com/BehzadE/go-wikidump/internal/model"
+	"github.com/cpegeric/go-wikidump/internal/model"
 )
 
 type dump struct {

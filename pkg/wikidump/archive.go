@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/BehzadE/go-wikidump/internal/model"
+	"github.com/cpegeric/go-wikidump/internal/model"
 )
 
 // Get the index files from the dump directory.
