@@ -1,6 +1,7 @@
 package wikidump
 
 import (
+	"fmt"
 	"bufio"
 	"compress/bzip2"
 	"errors"
@@ -38,6 +39,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	}
 	defer file.Close()
 
+	fmt.Println("processArchiveIndex start")
 	br := bzip2.NewReader(file)
 	scanner := bufio.NewScanner(br)
 	var s *stream
@@ -65,6 +67,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 		return err
 	}
 	err = d.markArchiveProcessed(archive.ID)
+	fmt.Println("processArchiveIndex end")
 	return err
 }
 
@@ -109,11 +112,15 @@ func (d *dump) PopulateDB() error {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, archive *model.Archive) {
 			defer wg.Done()
+			fmt.Println("PROCESSaRCHIVEiNDEX START")
 			if err = d.processArchiveIndex(archive); err != nil {
 				log.Printf("error processing archive index with ID %v: %v", archive.ID, err)
 			}
+			fmt.Println("PROCESSaRCHIVEiNDEX END")
 		}(&wg, archive)
 	}
+	fmt.Println("Popular before wait")
 	wg.Wait()
+	fmt.Println("Pipilaru END")
 	return nil
 }
