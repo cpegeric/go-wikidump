@@ -40,8 +40,11 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	defer file.Close()
 
 	fmt.Println("processArchiveIndex start")
+	fmt.Println("START READ STREMA 1")
 	br := bzip2.NewReader(file)
+	fmt.Println("START READ STREMA2")
 	scanner := bufio.NewScanner(br)
+	fmt.Println("START READ STREMA3")
 	var s *stream
 	var prevS *stream = nil
 	for {
