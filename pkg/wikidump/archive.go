@@ -45,6 +45,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 	var s *stream
 	var prevS *stream = nil
 	for {
+		fmt.Println("START READ STREMA")
 		s, err = readStream(scanner)
 		if err != nil {
 			if errors.Is(err, scannerExhaustedError{}) {
