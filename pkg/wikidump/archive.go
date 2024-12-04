@@ -53,6 +53,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 			return err
 		}
 		if prevS != nil {
+			fmt.Println("insert stream")
 			err = d.insertStream(archive.ID, prevS.byteBegin, s.byteBegin, prevS.pageIDs, prevS.pageNames)
 			if err != nil {
 				return err
@@ -63,6 +64,7 @@ func (d *dump) processArchiveIndex(archive *model.Archive) error {
 			break
 		}
 	}
+	fmt.Println("last insert stream")
 	if err = d.insertStream(archive.ID, prevS.byteBegin, archive.FileSize, prevS.pageIDs, prevS.pageNames); err != nil {
 		return err
 	}

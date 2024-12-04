@@ -1,6 +1,7 @@
 package wikidump
 
 import (
+	"fmt"
 	"bufio"
 	"strconv"
 	"strings"
@@ -46,6 +47,7 @@ func (err scannerExhaustedError) Error() string {
 // bool value shows whether the scanner has reached the end of the file or not.
 func readStream(scanner *bufio.Scanner) (*stream, error) {
 	var s stream
+	fmt.Printf("read stream start")
 	if !scanner.Scan() {
 		return nil, scannerExhaustedError{}
 	}
@@ -66,6 +68,7 @@ func readStream(scanner *bufio.Scanner) (*stream, error) {
 		s.pageNames = append(s.pageNames, il.pageName)
 		s.pageIDs = append(s.pageIDs, il.pageID)
 	}
+	fmt.Printf("readStream end... %d", i)
 	s.last = i < 99
 	return &s, nil
 }
